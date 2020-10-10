@@ -9,11 +9,13 @@ library(tidyverse)
 library(ggplot2)
 library(knitr)
 library(janitor)
+library(p8105.datasets)
+library(devtools)
+library(patchwork)
 ```
 
 ## Problem 1
 ```{r}
-library(p8105.datasets)
 data("instacart")
 ```
 
@@ -122,3 +124,69 @@ accel %>%
 From the above single-panel plot, we can deduce that the individual usually performed high activity on Fridays, especially towards the end of the day. However, day 22 seems to be an exception where there wasn't any high level of activity recorded towards the end of the day. Saturdays seem to have high amounts of activity recorded during the middle of the day, while the Sundays had steady level of activity. Day 16 recorded the highest amount of activity during the end of the day, when compared to the activity performed on the other days. One can also infer that there was more amount of activity registered during the beginning weeks (week 1, week 2, week 3), when compared to the other weeks. 
 
 ## Problem 3
+
+```{r}
+data("ny_noaa")
+ny_noaa = ny_noaa
+```
+
+Description of the dataset: 
+
+This dataset consists of records related to all the New York state weather stations from January 1, 1981 through December 31, 2010 and the associated variables are as follows: `r names(ny_noaa)`. (`r dim(ny_noaa)`) (rows, columns) is the dimension of the dataset and there are `r nrow(ny_noaa)` observations within this dataset. The tmax and tmin variables store the numerical information of maximum and minimum temperatures recorded over the years at every New York state weather station. Similarly, prcp and snow store numerical information related to rainfall and snowfall amount. This dataset has quite a bit of missing data, which is `r sum(is.na(ny_noaa))` entries across all fields. 
+
+_Do some data cleaning. Create separate variables for year, month, and day. Ensure observations for temperature, precipitation, and snowfall are given in reasonable units. For snowfall, what are the most commonly observed values? Why?_
+
+```{r}
+ny_noaa_tidy = ny_noaa %>%
+               clean_names() %>%
+               mutate(year = lubridate::year(date), 
+                      month = lubridate::month(date), 
+                      day = lubridate::day(date)) %>% #spliting the date into components#
+               select(id, year, month, day, prcp, snow, snwd, tmax, tmin) %>% #rearranging#
+               mutate(prcp = prcp/10,           #converting units to mm#
+                      tmax = as.numeric(tmax),  #converting data type to numeric#
+                      tmax = tmax/10,           #converting units to degrees C#
+                      tmin = as.numeric(tmin),  
+                      tmin = tmin/10)
+
+ny_noaa_tidy %>% 
+count(snow)  %>%
+arrange(desc(n)) %>%
+head(4)
+
+#From the table below, we can interpret that the most commonly observed values of snowfall are 0, 25 and 13 mm. These are considered to be the most commonly observed values because they appeared the most amount of the times during this observed timeline. However, the 2nd most commonly observed record wasn't mentioned above because it is a missing value.#
+  
+```
+
+_Make a two-panel plot showing the average max temperature in January and in July in each station across years. Is there any observable / interpretable structure? Any outliers?_
+
+```{r}
+avg_max_temp = ny_noaa_tidy %>%
+               filter(month == 1 | month == 7) %>%
+               group_by(id, year, month) %>%
+               summarize(avg_tmax = mean(tmax, na.rm = TRUE))
+
+avg_max_temp %>%
+  ggplot(aes(x = year, y = avg_tmax)) +
+      geom_line(aes(group = id)) +
+      facet_grid(~month)
+
+```
+
+From the graph above, we can deduce that the month of July had higher average max temperature than January across the years. One can also infer that the range of average max temperature has increased over the years for January and this could probably be attributed to the effect of global warming. Yes, there are a few outliers that can be observed in both January and July months that indicate extreme average max temperatures.
+
+_Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year._
+
+```{r}
+tmax_tmin = ny_noaa_tidy %>%
+            ggplot(aes(x = tmax, y = tmin)) +
+                  geom_hex()
+
+snow_dist = ny_noaa_tidy %>%
+            filter(snow > 0 & snow < 100) %>%
+            ggplot(aes(x = year, y = snow)) +
+                  geom_boxplot(aes(group = year))
+
+tmax_tmin + snow_dist
+```
+
