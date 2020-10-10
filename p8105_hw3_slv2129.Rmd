@@ -8,6 +8,7 @@ output: github_document
 library(tidyverse)
 library(ggplot2)
 library(knitr)
+library(janitor)
 ```
 
 ## Problem 1
@@ -20,7 +21,7 @@ Data description:
 
 
 
-How many aisles are there, and which aisles are the most items ordered from?
+_How many aisles are there, and which aisles are the most items ordered from?_
 
 ```{r}
 no_aisles = instacart %>% 
@@ -31,12 +32,13 @@ aisle_orders = instacart %>%
                count(aisle) %>% 
                arrange(desc(n))
 
-top_five = aisle_orders %>% select(aisle) %>% head(5)
+#The top five aisles that have the most items ordered from are as follows:#
+aisle_orders %>% select(aisle) %>% head(5)
 ```
 
-There are `r no_aisles` aisles in the instacart. The top five aisles that have the most items ordered from are `r `.
+There are `r no_aisles` aisles in the instacart. 
 
-Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
+_Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it._
 
 ```{r}
 aisle_orders_10000 = aisle_orders %>% filter(n > 10000) #limiting the dataset to contain only aisles that have orders more than 10000 items#
@@ -46,9 +48,9 @@ ggplot(aisle_orders_10000, aes(x = reorder(aisle, desc(n)), y = n)) +
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
+_Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table._
 
-```{r}
+```{r, message=FALSE}
 instacart %>% 
   filter(aisle %in% c("baking ingredients","dog food care","packaged vegetables fruits")) %>%
   group_by(aisle) %>% 
@@ -60,7 +62,7 @@ instacart %>%
   kable()
 ```
 
-Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+_Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table)._
 
 ```{r}
 instacart %>% 
@@ -76,3 +78,47 @@ instacart %>%
 
 ## Problem 2
 
+_Load, tidy, and otherwise wrangle the data. Your final dataset should include all originally observed variables and values; have useful variable names; include a weekday vs weekend variable; and encode data with reasonable variable classes. Describe the resulting dataset (e.g. what variables exist, how many observations, etc)._
+
+```{r}
+accel = read.csv("data/accel_data.csv") %>% 
+        pivot_longer(activity.1:activity.1440, 
+                     names_to = "min_of_day",
+                     names_prefix = "activity.",
+                     values_to = "activity_count") %>%
+        mutate(day_class = ifelse(day == "Saturday" | day == "Sunday", 
+                       "weekend", "weekday"), min_of_day = as.numeric(min_of_day)) %>%
+        clean_names() %>%
+        select(week, day_id, day_class, day, min_of_day, activity_count)
+
+```
+
+Description of Accelerometer dataset:
+
+This dataset consists of five weeks of accelerometer data collected on a 63 year-old male with BMI 25, who was admitted to the Advanced Cardiac Care Center of Columbia University Medical Center and diagnosed with congestive heart failure (CHF). The initial dataset has been transformed from a wide format structure to a long format dataset. After performing other manipulations and cleaning, a dataset with the following variables has been created: `r names(accel)`. Currently, this dataset consists of `r nrow(accel)` observations. The dimensions of the dataset are as follows: `r dim(accel)` (rows, columns). The min_of_day variable records the minutes of the day and activity_count records the activity performed at that respective minute. 
+
+_Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate accross minutes to create a total activity variable for each day, and create a table showing these totals. Are any trends apparent?_
+
+```{r, message=FALSE}
+accel %>% 
+  mutate(day = factor(day, levels = c("Monday", 
+         "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))) %>%
+  group_by(week, day_id,  day_class, day) %>%
+  summarize(actvity_day_total = sum(activity_count)) %>%
+  kable() 
+```
+
+It can be inferred from the table above that this individual didn't perform a lot of activity on the Saturdays of Week 4 and Week 5. The individual also seems to have performed lower amount of activity on the Monday of Week 1 (day 2), when compared to the activity of the other days. Compared to all the weeks, it seems like Week 4 recorded the least amount of activity. 
+
+_Accelerometer data allows the inspection activity over the course of the day. Make a single-panel plot that shows the 24-hour activity time courses for each day and use color to indicate day of the week. Describe in words any patterns or conclusions you can make based on this graph_
+
+```{r, message=FALSE}
+accel %>% 
+ ggplot(aes(x = min_of_day, y = activity_count)) +
+       geom_smooth(aes(color = day)) +
+       facet_wrap(~day_id)
+```
+
+From the above single-panel plot, we can deduce that the individual usually performed high activity on Fridays, especially towards the end of the day. However, day 22 seems to be an exception where there wasn't any high level of activity recorded towards the end of the day. Saturdays seem to have high amounts of activity recorded during the middle of the day, while the Sundays had steady level of activity. Day 16 recorded the highest amount of activity during the end of the day, when compared to the activity performed on the other days. One can also infer that there was more amount of activity registered during the beginning weeks (week 1, week 2, week 3), when compared to the other weeks. 
+
+## Problem 3
