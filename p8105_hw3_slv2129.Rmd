@@ -21,7 +21,7 @@ data("instacart")
 
 Data description:
 
-
+This dataset is related to the online grocery service known as the Instacart. This dataset consist of more than 3 million orders from a large number of users. The dataset consists of information associated with the year of 2017. This dataset contains `r nrow(instacart)` observations and has the following dimensions: `r dim(instacart)` (rows, columns). The variable associated with this dataset are `r names(instacart)`. Among these variables, product_name provides information about the name of the product and aisle gives details regarding the place where the respective products are located. Various aisles belonging to the same category have the same department. 
 
 _How many aisles are there, and which aisles are the most items ordered from?_
 
@@ -116,9 +116,8 @@ _Accelerometer data allows the inspection activity over the course of the day. M
 
 ```{r, message=FALSE}
 accel %>% 
- ggplot(aes(x = min_of_day, y = activity_count)) +
-       geom_smooth(aes(color = day)) +
-       facet_wrap(~day_id)
+ ggplot(aes(x = min_of_day, y = activity_count, color = day)) +
+       geom_line(aes(group = day_id))
 ```
 
 From the above single-panel plot, we can deduce that the individual usually performed high activity on Fridays, especially towards the end of the day. However, day 22 seems to be an exception where there wasn't any high level of activity recorded towards the end of the day. Saturdays seem to have high amounts of activity recorded during the middle of the day, while the Sundays had steady level of activity. Day 16 recorded the highest amount of activity during the end of the day, when compared to the activity performed on the other days. One can also infer that there was more amount of activity registered during the beginning weeks (week 1, week 2, week 3), when compared to the other weeks. 
