@@ -1,0 +1,11 @@
+---
+title: "Homework 3"
+author: "Krishna Vemulapalli"
+output: github_document
+---
+
+```{r setup}
+library(tidyverse)
+```
+
+## Problem 1
